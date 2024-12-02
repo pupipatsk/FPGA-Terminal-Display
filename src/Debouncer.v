@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 10/31/2021 11:04:18 PM
+// Create Date: 10/06/2024 10:18:56 PM
 // Design Name: 
-// Module Name: baudrate_gen
+// Module Name: Debouncer
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,20 +20,19 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module baudrate_gen(
-    input clk,
-    output reg baud
+module Debouncer(
+    output reg signal_out, // Debounced signal output
+    input async_sinal_in, // Asynchronous signal input
+    input clk
     );
     
-    integer counter;
+    wire Q1, notQ1, Q2, notQ2;
+    
+    Dflipflop DFF1(Q1, notQ1, async_sinal_in, clk);
+    Dflipflop DFF2(Q2, notQ2, Q1, clk);
+
     always @(posedge clk) begin
-        counter = counter + 1;
-        if (counter == 325) begin counter = 0; baud = ~baud; end 
-        // Clock = 10ns
-        // ClockFreq = 1/10ns = 100 MHz
-        // Baudrate = 9600
-        // counter = ClockFreq/Baudrate/16/2
-        // sampling every 16 ticks
+        if (Q1 == Q2) signal_out <= Q2;
     end
     
 endmodule
