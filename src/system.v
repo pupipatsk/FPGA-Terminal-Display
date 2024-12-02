@@ -2,8 +2,10 @@
 
 
 module system (
-    input wire [11:0] sw, // Switch inputs
-    input btnC, btnU, btnL,
+    input wire [7:0] sw, // Switch inputs
+    output wire [0:0] JA,        // UART TX (Transmit) on JA
+    input wire [0:0] JB,         // UART RX (Receive) on JB
+    input btnC
     output wire Hsync, Vsync,
     output wire [3:0] vgaRed, vgaGreen, vgaBlue,
     output wire RsTx,
@@ -14,10 +16,13 @@ module system (
     input clk
 );
 
-    wire [7:0] char;           // Received UART data
-    wire [7:0] data_transmit;  // Data to be transmitted
-    assign data_transmit = sw[7:0];
-    wire en;                   // Enable signal for valid received data
+    // Internal Signals
+    wire baud;                   // Baud rate clock
+    wire [7:0] received_data;    // Data received via UART
+    wire valid;                  // Signal for valid received data
+    wire sent;                   // Signal for transmitted data
+    wire [7:0] data_to_transmit; // Data to transmit (from switches)
+    assign data_to_transmit = sw; // Map switches to transmit data
 
     // Clock divider for VGA
     ClockDiv cd(
@@ -39,15 +44,15 @@ module system (
         .rgb({vgaRed, vgaGreen, vgaBlue})
     );
 
-    // UART module for bidirectional communication
-    uart uart_inst(
+    // UART Module
+    uart uart_inst (
         .clk(clk),
-        .RsRx(RsRx),
-        .RsTx(RsTx),
-        .char(char),
-        .en(en),
-        .data_transmit(data_transmit),
-        .btnC(btnC_debounced)
+        .RsRx(JB[0]),              // RX connected to JB[0]
+        .RsTx(JA[0]),              // TX connected to JA[0]
+        .char(received_data),      // Received character
+        .en(valid),                // Valid received data signal
+        .data_transmit(data_to_transmit), // Data to transmit
+        .btnC(btnC)                // Transmit trigger
     );
 
     // Split received and transmitted data into nibbles for display
