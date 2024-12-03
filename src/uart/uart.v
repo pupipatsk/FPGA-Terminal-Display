@@ -20,10 +20,7 @@ module uart(
     wire baud;                   // Baud rate clock
 
     // Instantiate the baud rate generator
-    baudrate_gen baud_generator(
-        .clk(clk),
-        .baud(baud)
-    );
+    baudrate_gen baud_generator(.clk(clk), .baud(baud));
 
     // Instantiate UART receiver
     uart_rx receiver(
