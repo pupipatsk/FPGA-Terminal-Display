@@ -3,7 +3,7 @@
 
 module ClockDiv (
     output reg  clkDiv,
-    input  wire clock
+    input  wire clk
 );
     reg [22:0] counter;
 
@@ -11,7 +11,7 @@ module ClockDiv (
         counter <= 0;
     end
 
-    always @(posedge clock) begin
+    always @(posedge clk) begin
         if (counter == 100000) begin
             counter <= 0;
             clkDiv  <= ~clkDiv;

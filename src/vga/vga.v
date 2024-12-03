@@ -1,6 +1,3 @@
-`timescale 1ns / 1ps
-
-
 module vga(
     input wire clk,
     input wire [7:0] char,
@@ -15,6 +12,12 @@ module vga(
     parameter CHAR_HEIGHT = 16;  // Height of a character in pixels
     parameter NUM_CHARS_X = WIDTH / CHAR_WIDTH; // Number of characters horizontally
     parameter NUM_CHARS_Y = HEIGHT / CHAR_HEIGHT; // Number of characters vertically
+
+    // Rectangle parameters
+    parameter RECT_X_START = 100;  // X-coordinate start position
+    parameter RECT_Y_START = 100;  // Y-coordinate start position
+    parameter RECT_WIDTH = 200;    // Width of the rectangle
+    parameter RECT_HEIGHT = 150;   // Height of the rectangle
 
     // register for Basys 2 8-bit RGB DAC
     reg [11:0] rgb_reg;
@@ -56,26 +59,26 @@ module vga(
     reg last_rec;
     always @(posedge clk) begin
         if (~last_rec & en) begin
-            if (char == "\r" || char == "\n") begin // Handle new line
+            if (char == "\r" || char == "\n") begin // New line
                 char_n <= (char_n / NUM_CHARS_X) * NUM_CHARS_X + NUM_CHARS_X;
             end else begin
-                if (char >= 32 && char <= 126) begin
-                    text[char_n] <= char;  // Add valid character
+                if (char >= 32 && char <= 126) begin // Supported ASCII range
+                    text[char_n] <= char;
+                    char_n <= char_n + 1;
                 end else begin
-                    text[char_n] <= "-";   // Replace unsupported characters with '-'
+                    text[char_n] <= 8'd45; // ASCII code for '-'
+                    char_n <= char_n + 1;
                 end
-                char_n <= char_n + 1;      // Move to next character position
             end
         end
-        if (char_n >= NUM_CHARS_X * NUM_CHARS_Y) begin // Clear screen when full
+        if(char_n >= NUM_CHARS_X*NUM_CHARS_Y) begin // clear when page full
             char_n <= 0;
-            for (i = 0; i < NUM_CHARS_X * NUM_CHARS_Y; i = i + 1) begin
-                text[i] = ""; // Clear all characters
+            for (i = 0; i < NUM_CHARS_X*NUM_CHARS_Y; i = i + 1) begin
+              text[i] = "";
             end
         end
-        last_rec <= en; // Update last_rec for edge detection
+        last_rec = en;
     end
-
 
     // Compute the character based on current (x, y)
     wire [7:0] character;
@@ -89,17 +92,26 @@ module vga(
     wire char_pixel;
     assign char_pixel = font_rom[CHAR_HEIGHT * character + (y % CHAR_HEIGHT)][CHAR_WIDTH - 1 - (x % CHAR_WIDTH)]; // Access the correct row of the character
 
-    // Determine color of the pixel
+    // Determine color of the pixel, including rectangle drawing
     always @(posedge p_tick) begin
-        if (video_on && char_pixel) begin
-            rgb_reg = 12'b111111111111;  // Display the color from switch if pixel part of character
+        if (video_on) begin
+            if ((x >= RECT_X_START) && (x < RECT_X_START + RECT_WIDTH) &&
+                (y >= RECT_Y_START) && (y < RECT_Y_START + RECT_HEIGHT)) begin
+                rgb_reg = 12'b1111_0000_0000;  // Red color for the rectangle
+            end
+            else if (char_pixel) begin
+                rgb_reg = 12'b1111_1111_1111;  // White color for text
+            end
+            else begin
+                rgb_reg = 12'b0; // Black background
+            end
         end
         else begin
-            rgb_reg = 12'b0; // Black for empty pixels
+            rgb_reg = 12'b0; // Black outside the visible area
         end
     end
 
     // output
-    assign rgb = (video_on) ? rgb_reg : 12'b0;
+    assign rgb = rgb_reg;
 
 endmodule
