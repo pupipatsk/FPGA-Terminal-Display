@@ -1,0 +1,20 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name: Dflipflop
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module Dflipflop(
+    output reg Q,
+    output notQ,
+    input D,
+    input clk
+    );
+    
+    assign notQ = ~Q;
+    
+    always @(posedge clk) begin
+        Q <= D;
+    end
+    
+endmodule

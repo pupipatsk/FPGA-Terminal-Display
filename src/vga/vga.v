@@ -1,3 +1,6 @@
+`timescale 1ns / 1ps
+
+
 module vga(
     input wire clk,
     input wire [7:0] char,
